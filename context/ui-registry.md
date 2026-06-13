@@ -297,3 +297,173 @@ Last updated: 2026-06-10
 
 **Pattern notes:**
 Section headers use a `border-b border-border pb-3` separator pattern with `text-sm font-semibold text-text-primary`. Field labels are `text-xs font-medium uppercase tracking-wide text-text-secondary`. The TagInput component renders existing tags as `bg-surface-secondary rounded-full` pills inside a bordered container that looks like an input. Disabled inputs (email, end-date when currently-working is checked) use `disabled:bg-surface-secondary disabled:text-text-muted`. Select elements use `appearance-none` with a `ChevronDown` icon absolutely positioned on the right. Submit button uses `disabled:opacity-60 disabled:cursor-not-allowed` during pending state. Inline feedback messages below the button use `text-success-foreground` for success and `text-error` for errors.
+
+### NavLinks (Active State)
+
+File: components/layout/NavLinks.tsx
+Last updated: 2026-06-13
+
+| Property         | Class                                                                      |
+| ---------------- | -------------------------------------------------------------------------- |
+| Background       | none (transparent)                                                         |
+| Border           | active `border-b-2 border-accent`, inactive `border-transparent`          |
+| Border radius    | none                                                                       |
+| Text — primary   | active `text-accent`, inactive `text-text-dark`                           |
+| Text — secondary | none                                                                       |
+| Spacing          | `h-16 px-4 gap-1.5` per link                                              |
+| Hover state      | `hover:text-accent`                                                        |
+| Shadow           | none                                                                       |
+| Accent usage     | active link `text-accent border-accent`; icons 14px (`h-3.5 w-3.5`)      |
+
+**Pattern notes:**
+Links are `h-16` (matches header height) so `border-b-2` on active sits exactly at the header bottom, creating an underline-tab effect aligned with `border-b border-border` on the header. Each nav item has a leading icon: LayoutGrid (Dashboard), Search (Find Jobs), User (Profile). Uses `usePathname()` — must be a client component.
+
+### Search Controls Card
+
+File: components/find-jobs/SearchControls.tsx
+Last updated: 2026-06-13
+
+| Property         | Class                                                                        |
+| ---------------- | ---------------------------------------------------------------------------- |
+| Background       | `bg-surface`                                                                 |
+| Border           | `border border-border`                                                       |
+| Border radius    | card `rounded-2xl`, inputs/button `rounded-md`, banner `rounded-lg`         |
+| Text — primary   | `text-text-primary`                                                          |
+| Text — secondary | labels `text-text-secondary`, placeholder `text-text-muted`                 |
+| Spacing          | card `p-6`, input row `gap-4`, banner `mt-4 px-4 py-2.5`                   |
+| Hover state      | button `hover:bg-accent-dark`                                                |
+| Shadow           | `shadow-card`                                                                |
+| Accent usage     | Find Jobs button `bg-accent text-accent-foreground`; success banner `bg-success-lightest text-success-foreground` |
+
+**Pattern notes:**
+Two labeled inputs (JOB TITLE with leading Search icon, LOCATION) flex side-by-side with `flex-1`, button is `shrink-0`. Success banner sits below the input row with `bg-success-lightest`, Sparkles icon, and bold number spans. Labels use `text-xs font-medium uppercase tracking-wide text-text-secondary`.
+
+### Jobs Table
+
+File: components/find-jobs/JobsTable.tsx
+Last updated: 2026-06-13
+
+| Property         | Class                                                                        |
+| ---------------- | ---------------------------------------------------------------------------- |
+| Background       | `bg-surface`                                                                 |
+| Border           | `border border-border`, rows `border-b border-border`                       |
+| Border radius    | `rounded-2xl`                                                                |
+| Text — primary   | `text-text-primary` (14px), headers `text-text-secondary text-xs uppercase` |
+| Text — secondary | date `text-text-muted`                                                       |
+| Spacing          | filter row `px-6 py-4`, table cells `px-6 py-4`, pagination `px-6 py-4`    |
+| Hover state      | rows `hover:bg-surface-secondary`, filter/sort buttons `hover:bg-surface-secondary` |
+| Shadow           | `shadow-card`                                                                |
+| Accent usage     | active page button `bg-accent text-accent-foreground`; score bar fill color by score |
+
+**Pattern notes:**
+Filter row has a search input (flex-1) and two styled `<button>` dropdowns with ChevronDown icons right-aligned. Table uses `<table>` with no alternating row colors. MatchScoreBar: fixed `h-1 w-20` track (`bg-border-light`), fill width is `score%`, color thresholds: ≥90% `bg-success`, ≥75% `bg-info`, <75% `bg-warning`. CompanyIcon: `h-8 w-8 rounded-lg bg-surface-secondary` with Building2 icon. Pagination: left side "Showing X to Y of Z results" with bold spans; right side Previous (disabled on page 1) + page numbers + ellipsis + Next. Rows are `cursor-pointer` with `onClick={() => router.push('/find-jobs/${job.id}')}`.
+
+---
+
+### Job Details Page
+
+File: app/find-jobs/[id]/page.tsx
+Last updated: 2026-06-13
+
+| Property         | Class                                                                        |
+| ---------------- | ---------------------------------------------------------------------------- |
+| Background       | `bg-background` (page), `bg-surface` (cards)                                |
+| Border           | `border border-border`, cards `rounded-2xl`                                 |
+| Border radius    | cards `rounded-2xl`, icon containers `rounded-xl` (header 48px) / `rounded-lg` (info 36px) |
+| Text — primary   | `text-text-primary` (title, values), `text-text-secondary` (labels, company name) |
+| Text — secondary | `text-text-muted` (timestamps, "gap label" subsection, empty state body)    |
+| Spacing          | page `px-6 py-8 lg:px-12`, sections `gap-6`, content cards `p-6`, info cards `p-4`, back link `mb-0 mt-0` (inline-flex before `mt-6` div) |
+| Hover state      | View Job Post `hover:bg-surface-secondary`; Apply Now `hover:bg-accent-dark`; inline text links `hover:text-accent-dark` |
+| Shadow           | `shadow-card` on all cards including info cards                             |
+| Accent usage     | Score badge ≥70 `bg-success-lightest text-success-foreground`, <70 `bg-warning-light text-warning`; Apply Now `bg-accent text-accent-foreground rounded-xl`; disabled Research button `bg-accent opacity-60 cursor-not-allowed`; matched skill `bg-success-lightest text-success-foreground`; gap skill `bg-accent-muted text-accent`; inline accent link `text-accent hover:text-accent-dark` |
+
+**Pattern notes:**
+Server component, `params: Promise<{ id: string }>` awaited (Next.js 16). Score badge is inline after `·` separator with `rounded-full px-2.5 py-0.5 text-xs font-medium`. Info cards: `grid grid-cols-2 sm:grid-cols-4 gap-4`, each has `h-9 w-9 rounded-lg` icon container with bg matching semantic color (salary→`bg-success-lightest`, location→`bg-info-lightest`, type/date→`bg-surface-secondary`) and stacked `text-xs uppercase tracking-wide text-text-secondary` label + `text-sm font-medium text-text-primary truncate` value. Section header pattern: `text-xs font-medium uppercase tracking-wide text-text-secondary` with icon `h-4 w-4 text-text-muted` (or `text-success` for AI sections). Skill badges always have a leading 3×3 icon (CheckCircle green / XCircle accent). Adzuna job descriptions are API-truncated snippets — render full snippet as `text-sm leading-6 text-text-primary`, follow with `text-sm font-medium text-accent` inline link "Read full description" + ExternalLink `h-3.5 w-3.5`. Apply Now is full-width `block w-full rounded-xl py-4 text-center`, only rendered when URL is present. Empty state pattern: center-column `py-12`, large muted icon `h-10 w-10`, `text-sm font-medium text-text-primary` heading, `text-sm text-text-muted max-w-xs` body. Company Research card is `<CompanyResearchCard>` client component — see entry below.
+
+---
+
+### Company Research Card
+
+File: components/find-jobs/CompanyResearchCard.tsx
+Last updated: 2026-06-13
+
+| Property         | Class                                                                        |
+| ---------------- | ---------------------------------------------------------------------------- |
+| Background       | `bg-surface` (card shell), `bg-surface-secondary` (overview inset), `bg-success-lightest` (Your Edge), `bg-warning-light` (Areas to Address) |
+| Border           | `border border-border` (card), `border-t border-border` (sources divider)   |
+| Border radius    | card `rounded-2xl`, inset sections `rounded-xl`                             |
+| Text — primary   | `text-text-primary`                                                          |
+| Text — secondary | `text-text-secondary` (bullet lists, overview), `text-text-muted` (section labels, sources) |
+| Spacing          | card `p-6`, inset sections `p-4`, section gap `gap-5`, bullet gap `gap-1.5` |
+| Hover state      | Research button `hover:bg-accent-dark`, source links `hover:text-text-secondary` |
+| Shadow           | `shadow-card`                                                                |
+| Accent usage     | Research button `bg-accent text-accent-foreground`; Researched badge `bg-success-lightest text-success-foreground`; Tech Stack chips `bg-accent-muted text-accent`; loading spinner `text-accent`; Your Edge section `bg-success-lightest text-success-foreground`; Areas to Address `bg-warning-light text-warning` |
+
+**Pattern notes:**
+Client component (`"use client"`). Three states: empty (Building2 icon + description), loading (Loader2 `animate-spin` + progress text), dossier (9-section layout). "Research Company" button shows `Loader2 animate-spin` + "Researching…" while in flight, then calls `router.refresh()` on success so the server component re-fetches and re-passes `initialResearch`. "Researched" badge appears in the header when dossier is present. Section labels always `text-xs font-medium uppercase tracking-wide text-text-muted`. Bullet list items: `flex items-start gap-2`, bullet dot `mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full`. Tech Stack chips match skill badge pattern: `rounded-full px-2.5 py-1 text-xs font-medium`. Sources rendered as `<a>` links with ExternalLink `h-3 w-3` icon, below a `border-t border-border pt-4` divider. `CompanyResearch` type exported from this file and imported in the API route and job details page.
+
+---
+
+### Dashboard — Stat Card
+
+File: components/dashboard/StatCard.tsx
+Last updated: 2026-06-13
+
+| Property         | Class                                                                        |
+| ---------------- | ---------------------------------------------------------------------------- |
+| Background       | `bg-surface`                                                                 |
+| Border           | `border border-border`                                                       |
+| Border radius    | `rounded-2xl`                                                                |
+| Text — primary   | value `text-[30px] font-semibold leading-9 text-text-primary`               |
+| Text — secondary | label `text-sm font-normal leading-5 text-text-secondary`, subtitle `text-xs text-text-muted` |
+| Spacing          | `p-5`, trend row `mt-2 gap-1.5`                                             |
+| Hover state      | none                                                                         |
+| Shadow           | `shadow-card`                                                                |
+| Accent usage     | trend badge `bg-success-lightest text-success-darker rounded-sm px-2 py-0.5` |
+
+**Pattern notes:**
+Four-column grid on desktop (`grid-cols-4`), two-column on mobile. Two display variants: `trendBadge` + `trendText` (renders green rounded-sm badge + muted text inline), or `subtitle` (renders muted text below value). Trend badge uses `rounded-sm` (not pill). Stat value font size is `text-[30px]` — use this exact value, not a named Tailwind class.
+
+---
+
+### Dashboard — Activity List
+
+File: components/dashboard/ActivityList.tsx
+Last updated: 2026-06-13
+
+| Property         | Class                                                                        |
+| ---------------- | ---------------------------------------------------------------------------- |
+| Background       | `bg-surface`                                                                 |
+| Border           | `border border-border`                                                       |
+| Border radius    | `rounded-2xl`                                                                |
+| Text — primary   | `text-sm font-medium leading-5 text-text-primary`                           |
+| Text — secondary | timestamp `text-xs text-text-muted`                                         |
+| Spacing          | `p-6`, list `mt-5 space-y-5`, item `gap-3`                                 |
+| Hover state      | none                                                                         |
+| Shadow           | `shadow-card`                                                                |
+| Accent usage     | dots use inline `style` with token hex values (no Tailwind — dynamic colors) |
+
+**Pattern notes:**
+`h-full` so card stretches to match the adjacent chart height. Activity dot: outer `h-4 w-4 rounded-full` with `style={{ background: outerBg }}`, inner `h-2 w-2 rounded-full` centered via flex. Three dot types — agent (purple: outer `#F3E8FF`, inner `#7C5CFC`), research (blue: outer `#DBEAFE`, inner `#61A8FF`), job (green: outer `#D0FAE5`, inner `#00BC7D`). Dots use inline styles (not Tailwind) because the colors are dynamic and Tailwind can't purge dynamic class names safely.
+
+---
+
+### Dashboard — Charts (CompanyResearchChart, JobsFoundChart, MatchScoreChart)
+
+Files: components/dashboard/CompanyResearchChart.tsx, components/dashboard/JobsFoundChart.tsx, components/dashboard/MatchScoreChart.tsx
+Last updated: 2026-06-13
+
+| Property         | Class                                                                        |
+| ---------------- | ---------------------------------------------------------------------------- |
+| Background       | `bg-surface`                                                                 |
+| Border           | `border border-border`                                                       |
+| Border radius    | `rounded-2xl`                                                                |
+| Text — primary   | heading `text-base font-semibold leading-6 text-text-primary`               |
+| Text — secondary | none                                                                         |
+| Spacing          | `p-6`, chart wrapper `mt-4`                                                 |
+| Hover state      | none                                                                         |
+| Shadow           | `shadow-card`                                                                |
+| Accent usage     | chart colors via recharts `fill`/`stroke` props (hex, not Tailwind)         |
+
+**Pattern notes:**
+All three are `"use client"` recharts components. `ResponsiveContainer width="100%"` wraps each chart. Grid: `CartesianGrid strokeDasharray="4 4" stroke="#E7EAF3" vertical={false}` (horizontal dashes only). Axes: `axisLine={false} tickLine={false}`, tick `fill: "#9CA3AF" fontSize: 12`. Bar charts use `radius={[4, 4, 0, 0]}` for rounded top corners. Area chart uses `<defs><linearGradient>` for gradient fill. Chart colors: CompanyResearch bars `#61A8FF`, JobsFound line `#7C5CFC` with gradient fill `rgba(124,92,252,0.2)→0`, MatchScore bars `#10B981`. Y-axis margins use `left: -20` to tighten label spacing. Chart heights: CompanyResearch `220`, JobsFound/MatchScore `240`.

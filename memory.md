@@ -1,54 +1,47 @@
-# Memory — Feature 08: Resume PDF Generation from Profile
+# Memory — Feature 17: Analytics Charts + Tooltips
 
-Last updated: 2026-06-12
+Last updated: 2026-06-13
 
 ## What was built
 
-- `app/api/resume/generate/route.ts` — POST route: auth → fetch profile from DB → GPT-4o (json_object, temp 0.3) generates `{ summary, workExperience[].bullets }` → `@react-pdf/renderer` `renderToBuffer()` produces a 5-section PDF (header, summary, experience, skills, education) → upload buffer to InsForge Storage → store `uploadData.key` in `resume_pdf_url` → return `{ success: true }`
-- `components/profile/ResumeSection.tsx` — wired "Generate Resume from Profile" button: `handleGenerate`, `isGenerating`/`generateStatus`/`generateMessage` states, `router.refresh()` on success, `useRouter` import added
-- `app/api/resume/view/route.ts` — fixed to read `resume_pdf_url` from profiles table and download by that key (instead of hardcoding `${user.id}/resume.pdf`)
-- `actions/profile.ts` → `uploadResume` — fixed to store `uploadData.key` instead of the requested `storagePath`
-- `next.config.ts` — added `"@react-pdf/renderer"` to `serverExternalPackages`
-- `@react-pdf/renderer` installed
+**Feature 17 — Analytics Charts: Real Data**
+- `components/dashboard/JobsFoundChart.tsx` — now accepts `data: {day: string; value: number}[]` prop. Removed hardcoded Mon–Sun mock. 30-day AreaChart with `interval={4}` on XAxis to prevent label crowding. Auto-scaling YAxis (`allowDecimals={false}`). Empty state ("No data yet") when all values are zero. Tooltip added.
+- `components/dashboard/CompanyResearchChart.tsx` — accepts `data: {day: string; value: number}[]` prop. 7-day BarChart. Same empty state + tooltip pattern.
+- `components/dashboard/MatchScoreChart.tsx` — accepts `data: {range: string; value: number}[]` prop. 5-bucket BarChart. Same empty state + tooltip pattern.
+- `app/dashboard/page.tsx` — three new helper functions added: `jobsFoundChartData()` (30 days from agent_runs.jobs_found summed per day), `matchScoreChartData()` (jobs.match_score bucketed into 5 ranges), `researchChartData()` (7 days of jobs where company_research != null, counted per day). agent_runs query updated: removed `.limit(8)`, added `.gte("completed_at", thirtyDaysAgo)`. Activity list still takes the first 8 from runRows. Props passed: `<JobsFoundChart data={jobsFoundChartData(runRows)} />`, `<MatchScoreChart data={matchScoreChartData(jobRows)} />`, `<CompanyResearchChart data={researchChartData(jobRows)} />`.
+
+**Tooltip addition (post-Feature 17)**
+- All three chart components now include a `ChartTooltip` custom component rendered via recharts `<Tooltip content={<ChartTooltip />} />`.
+- Tooltip shows: label (day/range) bold, "count : {value}" in muted text, styled with `bg-surface border-border shadow-card rounded-lg`.
+- AreaChart uses `cursor={false}`; BarCharts use `cursor={{ fill: "#F3F4F6", opacity: 0.5 }}`.
+- `TooltipProps` from recharts was unusable (TS errors) — props typed inline as `{ active?: boolean; payload?: { value: number }[]; label?: string }`.
 
 ## Decisions made
 
-- **InsForge storage does not overwrite files** — when a file already exists at a path, InsForge auto-increments the filename (`resume.pdf` → `resume (10).pdf`). The `upload()` call succeeds with `error: null` but `uploadData.key` differs from the requested path. Fix: always store `uploadData.key` (the actual assigned key) in `resume_pdf_url`, never the requested path.
-- **View route reads key from DB** — `app/api/resume/view/route.ts` queries `profiles.resume_pdf_url` and passes that to `storage.download()`. This keeps view and generate in sync regardless of what key InsForge assigns.
-- **Same fix applied to `uploadResume`** — the `uploadResume` server action had the identical bug; fixed in the same session.
-- **`@react-pdf/renderer` uses direct named import** — no `createRequire` hack needed (unlike `pdf-parse`). It's an ESM package with React as a peerDep; elements are built with `React.createElement` and passed to `renderToBuffer`.
-- **Buffer size guard** — if `renderToBuffer` returns fewer than 100 bytes, the route returns a 500 before attempting upload.
-- **`@google/generative-ai` is installed but unused** — installed during a Gemini detour in Feature 07. Can be removed.
+- **DB-derived chart data instead of PostHog** — `posthog-node` is capture-only with no query API. PostHog HTTP query API requires a Personal API Key not present in `.env.local` (only public project token exists). DB is the source of truth anyway — same data, no new secrets, consistent with Features 15/16.
+- **agent_runs query window is 30 days** — sufficient for Jobs Found Over Time chart; activity list still uses the first 8 rows from the same fetch (no extra query).
+- **Inline tooltip prop types** — recharts `TooltipProps<number, string>` does not expose `payload`/`label` in this version of the package. Typed inline to avoid TS errors.
 
 ## Problems solved
 
-- **InsForge storage auto-increment bug** — upload would return `{ error: null }` with a *different* key than requested (`resume (n).pdf`). DB stored the requested path; view route used the requested path; file was at a different path → 404. Root cause confirmed by adding `console.log` of `uploadData`. Fixed by storing `uploadData.key` everywhere.
-- **`remove` + `upload` pattern does not work on InsForge** — tried deleting before re-uploading (standard upsert workaround), but InsForge still auto-incremented. Abandoned in favour of using the actual assigned key.
+- `TooltipProps` from recharts caused TS2339 errors (`payload` and `label` do not exist on the type). Fixed by removing the import and typing the tooltip props inline.
 
 ## Current state
 
-Phase 2 Features 01–08 fully complete. Profile page:
-- Loads and pre-fills from DB on every visit
-- Saves all fields on submit with success/error feedback
-- Uploads resume on file selection; stores actual storage key in DB
-- Shows filename + "View resume" link after upload
-- "Extract from Resume" calls GPT-4o, populates form fields
-- "Generate Resume from Profile" calls GPT-4o + react-pdf, produces a PDF, stores key in DB, shows success + "View resume" link
-- "View resume" reads key from DB and serves the file — works for both uploaded and generated resumes
+Phase 5 — Dashboard. **All features complete (01–17).**
+- ✓ Features 01–17 complete
+- `npx tsc --noEmit` passes clean
+- Dashboard shows real stat counts, real activity list, real chart data from DB
+- All three charts have hover tooltips
+- `progress-tracker.md` updated: Phase 5 marked complete, Feature 17 logged
 
 ## Next session starts with
 
-Feature 09 — Find Jobs Page Full UI. Read `context/build-plan.md` Feature 09 section first.
-
-Key tasks:
-- Search controls card (JOB TITLE input, LOCATION input, Find Jobs button, success banner)
-- Job list section (filter bar, jobs table with COMPANY / ROLE / MATCH SCORE / SALARY / SOURCE / DATE columns)
-- Match score column: color-coded progress bar + percentage
-- SOURCE badge: Search vs URL variant
-- Pagination row: "Showing 1 to 6 of 24 results", Previous/Next, page numbers
-- All UI with mock data — no logic yet
+Phase 6 is not yet defined in the build plan. Next session should:
+1. Read `context/build-plan.md` to check if a Phase 6 exists
+2. If none — discuss with the user what comes next (deployment, new features, polish)
 
 ## Open questions
 
-- `@google/generative-ai` is installed but unused — remove if package weight is a concern.
-- The debug `console.log` in `generate/route.ts` was removed; confirm the view link works end-to-end before shipping.
+- `@google/generative-ai` package still installed but unused — safe to remove with `npm uninstall @google/generative-ai`
+- `BROWSERBASE_API_KEY` and `BROWSERBASE_PROJECT_ID` must be in `.env.local` for Feature 13 (Company Research Agent) to work in production

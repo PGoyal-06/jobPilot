@@ -2,12 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { SignOutButton } from "@/components/auth/SignOutButton";
-
-const navigationItems: { href: string; label: string }[] = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/find-jobs", label: "Find Jobs" },
-  { href: "/profile", label: "Profile" },
-];
+import { NavLinks } from "@/components/layout/NavLinks";
 
 type Props = {
   ctaHref?: string;
@@ -33,13 +28,7 @@ export function Navbar({
             className="h-10 w-auto"
           />
         </Link>
-        <nav className="hidden items-center gap-12 text-sm font-medium text-text-slate sm:flex">
-          {navigationItems.map((item) => (
-            <Link key={item.href} href={item.href} className="hover:text-accent">
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <NavLinks />
         {showSignOut ? (
           <SignOutButton />
         ) : (

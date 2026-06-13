@@ -1,9 +1,27 @@
 import { PostHogIdentify } from "@/components/auth/PostHogIdentify";
+import { JobsTable } from "@/components/find-jobs/JobsTable";
+import { SearchControls } from "@/components/find-jobs/SearchControls";
 import { Navbar } from "@/components/layout/Navbar";
-import { requireCurrentUser } from "@/lib/insforge-server";
+import { createInsforgeServer, requireCurrentUser } from "@/lib/insforge-server";
+
+export type JobRow = {
+  id: string;
+  company: string | null;
+  title: string | null;
+  match_score: number | null;
+  salary: string | null;
+  found_at: string;
+};
 
 export default async function FindJobsPage() {
   const user = await requireCurrentUser();
+  const insforge = await createInsforgeServer();
+
+  const { data: jobs } = await insforge.database
+    .from("jobs")
+    .select("id, company, title, match_score, salary, found_at")
+    .eq("user_id", user.id)
+    .order("found_at", { ascending: false });
 
   return (
     <main className="min-h-screen bg-background">
@@ -14,13 +32,9 @@ export default async function FindJobsPage() {
       />
       <Navbar showSignOut />
       <section className="page-shell px-6 py-8 lg:px-12">
-        <div className="rounded-xl border border-border bg-surface p-6 shadow-card">
-          <h1 className="text-base font-semibold leading-6 text-text-primary">
-            Find Jobs
-          </h1>
-          <p className="mt-2 text-sm font-normal leading-5 text-text-secondary">
-            Job search controls will appear here.
-          </p>
+        <div className="flex flex-col gap-6">
+          <SearchControls />
+          <JobsTable jobs={(jobs ?? []) as JobRow[]} />
         </div>
       </section>
     </main>
